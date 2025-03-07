@@ -33,14 +33,11 @@ class SplashScreen extends StatelessWidget {
             child: Container(
               width: MediaQuery.of(context).size.width + 10,
               height: 282,
-              decoration: ShapeDecoration(
-                color: const Color(0xFF5973A8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+              decoration: const BoxDecoration(color: Color(0xFF5973A8)),
                 ),
               ),
-            ),
-          ),
+
+
 
           // Background Image
           Positioned(

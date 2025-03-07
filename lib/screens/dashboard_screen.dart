@@ -23,9 +23,6 @@ class WorkerDashboard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    double screenWidth = MediaQuery.of(context).size.width;
-    double screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.blue,
@@ -33,7 +30,15 @@ class WorkerDashboard extends StatelessWidget {
         actions: [
           IconButton(
             icon: Icon(Icons.account_circle, color: Colors.white, size: 30),
-            onPressed: () {},
+            onPressed: () {
+              // Navigate to Worker Profile Screen when clicking the profile icon
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => WorkerProfileScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),

@@ -22,7 +22,7 @@ class SplashScreen extends StatelessWidget {
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: 323,
-              decoration: const BoxDecoration(color: Color(0xFF5973A8)),
+              decoration: const BoxDecoration(color: Color(0xFFC1C3B7)),
             ),
           ),
 
@@ -33,7 +33,7 @@ class SplashScreen extends StatelessWidget {
             child: Container(
               width: MediaQuery.of(context).size.width + 10,
               height: 282,
-              decoration: const BoxDecoration(color: Color(0xFF5973A8)),
+              decoration: const BoxDecoration(color: Color(0xFFC1C3B7)),
                 ),
               ),
 
@@ -42,13 +42,13 @@ class SplashScreen extends StatelessWidget {
           // Background Image
           Positioned(
             left: -2,
-            top: 289,
+            top: 250,
             child: Container(
               width: MediaQuery.of(context).size.width,
               height: 426,
               decoration: const BoxDecoration(
                 image: DecorationImage(
-                  image: NetworkImage("https://picsum.photos/413/426"),
+                  image: AssetImage('lib/assets/images/icon.png'),
                   fit: BoxFit.cover,
                 ),
               ),

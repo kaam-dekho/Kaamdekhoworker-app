@@ -10,6 +10,7 @@ class LoginScreen extends StatelessWidget {
     final TextEditingController passwordController = TextEditingController();
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
       body: Stack(
         children: [
@@ -27,14 +28,14 @@ class LoginScreen extends StatelessWidget {
           // Bottom Blue Section
           Positioned(
             left: -14,
-            bottom: 0,
+            bottom: -24,
             child: Container(
               width: MediaQuery.of(context).size.width + 20,
-              height: 245,
+              height: 125,
               decoration: ShapeDecoration(
                 color: const Color(0xFF5973A8),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(1000),
+                  borderRadius: BorderRadius.circular(00),
                 ),
               ),
             ),
@@ -49,15 +50,15 @@ class LoginScreen extends StatelessWidget {
                 children: [
                   // App Logo or Icon
                   const CircleAvatar(
-                    radius: 50,
+                    radius: 70,
                     backgroundImage:
-                    NetworkImage("https://picsum.photos/195/195"),
+                    AssetImage('lib/assets/images/icon.png'),
                   ),
                   const SizedBox(height: 20),
 
                   // Title
                   const Text(
-                    "USER LOGIN",
+                    "LOGIN",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
@@ -66,17 +67,18 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 30),
 
-                  // Email Field
+                  // Phone Numbers Field
                   TextField(
                     controller: emailController,
                     decoration: InputDecoration(
-                      labelText: "Enter Email",
+                      labelText: "Enter Phone Number",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       filled: true,
                       fillColor: Colors.grey[200],
                     ),
+                    keyboardType: TextInputType.phone,
                   ),
                   const SizedBox(height: 20),
 
@@ -85,13 +87,14 @@ class LoginScreen extends StatelessWidget {
                     controller: passwordController,
                     obscureText: true,
                     decoration: InputDecoration(
-                      labelText: "Enter Password",
+                      labelText: "Enter OTP",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(10),
                       ),
                       filled: true,
                       fillColor: Colors.grey[200],
                     ),
+                      keyboardType: TextInputType.phone
                   ),
                   const SizedBox(height: 30),
 
@@ -119,17 +122,34 @@ class LoginScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 20),
 
-                  // Social Login Text
-                  const Text("Login using", style: TextStyle(fontSize: 16)),
+// generate otp buttom
+                  SizedBox(
+                    width: 120,
+                    height: 30,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        // logic to generate otp
+
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF5973A8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                      ),
+                      child: const Text(
+                        "Generate OTP",
+                        style: TextStyle(fontSize: 10, color: Colors.white),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 20,),
+
+
+
 
                   // Social Login Button (Google)
-                  const SizedBox(height: 10),
-                  IconButton(
-                    onPressed: () {
-                      // Implement Google Login
-                    },
-                    icon: const Icon(Icons.account_circle, size: 40),
-                  ),
+
                 ],
               ),
             ),

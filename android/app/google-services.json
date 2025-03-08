@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "552032026830",
+    "project_id": "kaamdekhoworker",
+    "storage_bucket": "kaamdekhoworker.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:552032026830:android:6dbe44500940c24b9c909f",
+        "android_client_info": {
+          "package_name": "com.example.kaamdekhoworker"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCwFb-R9LSs2WwqYFJ8ojQV6gjq0pjH_-g"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

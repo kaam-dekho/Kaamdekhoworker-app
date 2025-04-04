@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'routes/app_routes.dart';
+import 'screens/login_screen.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,11 +13,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       title: 'KaamDekho Worker',
-      theme: ThemeData(
-        primarySwatch: Colors.blue,
-      ),
-      initialRoute: AppRoutes.splash,
-      routes: AppRoutes.getRoutes(),
+      theme: ThemeData(primarySwatch: Colors.blue),
+      home: const LoginScreen(),
     );
   }
 }

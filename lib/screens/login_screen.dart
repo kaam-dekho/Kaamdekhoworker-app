@@ -1,6 +1,7 @@
+import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:twilio_flutter/twilio_flutter.dart';
-import '../routes/app_routes.dart'; // Import for navigation
+import 'package:google_fonts/google_fonts.dart';
+import 'profile_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -14,185 +15,127 @@ class _LoginScreenState extends State<LoginScreen> {
   final TextEditingController otpController = TextEditingController();
   String generatedOTP = "";
 
-  late TwilioFlutter twilioFlutter;
-
-  @override
-  void initState() {
-    super.initState();
-    // Initialize Twilio
-    twilioFlutter = TwilioFlutter(
-      accountSid: 'YOUR_TWILIO_ACCOUNT_SID',
-      authToken: 'YOUR_TWILIO_AUTH_TOKEN',
-      twilioNumber: 'whatsapp:+14155238886', // Twilio WhatsApp Sandbox Number
-    );
-  }
-
-  // Generate a random 6-digit OTP
+  // Generate a secure random 6-digit OTP
   String generateOTP() {
-    return (100000 + (999999 - 100000) * (DateTime.now().millisecondsSinceEpoch % 1000) / 1000).toInt().toString();
+    Random random = Random();
+    return (100000 + random.nextInt(900000)).toString();
   }
 
-  // Send OTP via WhatsApp
+  // Generate OTP and print it to the console
   void sendOTP() {
     String phoneNumber = phoneController.text.trim();
     if (phoneNumber.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter your phone number!")));
       return;
     }
+    if (!RegExp(r'^[0-9]{10,15}$').hasMatch(phoneNumber)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter a valid phone number!")));
+      return;
+    }
 
     generatedOTP = generateOTP();
+    print("Generated OTP: $generatedOTP");
 
-    twilioFlutter.sendSMS(
-      toNumber: 'whatsapp:$phoneNumber', // User's WhatsApp number
-      messageBody: 'Your OTP code is: $generatedOTP',
-    );
-
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OTP sent via WhatsApp!")));
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("OTP generated! Check console.")));
   }
 
   // Verify OTP
   void verifyOTP() {
-    if (otpController.text.trim() == generatedOTP) {
-      Navigator.pushReplacementNamed(context, AppRoutes.dashboard);
+    String enteredOTP = otpController.text.trim();
+
+    if (enteredOTP.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Please enter the OTP!")),
+      );
+      return;
+    }
+
+    if (enteredOTP == generatedOTP) {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const ProfileScreen()),
+      );
     } else {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Invalid OTP!")));
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Invalid OTP! Please try again.")),
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      resizeToAvoidBottomInset: true,
       backgroundColor: Colors.white,
-      body: Stack(
-        children: [
-          // Top Blue Section
-          Positioned(
-            left: 0,
-            top: 0,
-            child: Container(
-              width: MediaQuery.of(context).size.width,
-              height: 125,
-              decoration: const BoxDecoration(color: Color(0xFF5973A8)),
-            ),
-          ),
+      body: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          crossAxisAlignment: CrossAxisAlignment.center,
+          children: [
+            // App Logo
+            Image.asset('lib/assets/images/icon.png', height: 120),
+            const SizedBox(height: 10),
 
-          // Bottom Blue Section
-          Positioned(
-            left: -14,
-            bottom: -24,
-            child: Container(
-              width: MediaQuery.of(context).size.width + 20,
-              height: 125,
-              decoration: ShapeDecoration(
-                color: const Color(0xFF5973A8),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(00),
-                ),
+            // App Title
+            Text(
+              "KaamDekho Worker",
+              style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueAccent),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              "Login to continue",
+              style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
+            ),
+            const SizedBox(height: 40),
+
+            // Phone Number Field
+            TextField(
+              controller: phoneController,
+              keyboardType: TextInputType.phone,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.phone),
+                labelText: "Enter Phone Number",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-          ),
+            const SizedBox(height: 15),
 
-          // Login Box
-          Center(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 30),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  // App Logo
-                  const CircleAvatar(
-                    radius: 70,
-                    backgroundImage: AssetImage('lib/assets/images/icon.png'),
-                  ),
-                  const SizedBox(height: 20),
+            // Send OTP Button
+            ElevatedButton(
+              onPressed: sendOTP,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text("Send OTP", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white)),
+            ),
+            const SizedBox(height: 20),
 
-                  // Title
-                  const Text(
-                    "LOGIN",
-                    style: TextStyle(
-                      fontSize: 28,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Phone Number Field
-                  TextField(
-                    controller: phoneController,
-                    decoration: InputDecoration(
-                      labelText: "Enter Phone Number",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                    ),
-                    keyboardType: TextInputType.phone,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // OTP Field
-                  TextField(
-                    controller: otpController,
-                    obscureText: true,
-                    decoration: InputDecoration(
-                      labelText: "Enter OTP",
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      filled: true,
-                      fillColor: Colors.grey[200],
-                    ),
-                    keyboardType: TextInputType.number,
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Login Button
-                  SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: ElevatedButton(
-                      onPressed: verifyOTP,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5973A8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        "LOGIN",
-                        style: TextStyle(fontSize: 20, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Generate OTP Button
-                  SizedBox(
-                    width: 120,
-                    height: 30,
-                    child: ElevatedButton(
-                      onPressed: sendOTP,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF5973A8),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                      ),
-                      child: const Text(
-                        "Generate OTP",
-                        style: TextStyle(fontSize: 10, color: Colors.white),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                ],
+            // OTP Input Field
+            TextField(
+              controller: otpController,
+              keyboardType: TextInputType.number,
+              decoration: InputDecoration(
+                prefixIcon: const Icon(Icons.lock),
+                labelText: "Enter OTP",
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 15),
+
+            // Verify OTP Button
+            ElevatedButton(
+              onPressed: verifyOTP,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              child: Text("Verify OTP", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white)),
+            ),
+          ],
+        ),
       ),
     );
   }

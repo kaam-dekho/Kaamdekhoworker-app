@@ -1,54 +1,85 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
+const String baseUrl = 'http://10.0.2.2:5000'; // Localhost for Android emulator
+
 class ApiService {
-  static const String baseUrl = "http://localhost:5000/api/workers"; // Change this to your API URL
-
-  // ✅ Worker Registration API
-  static Future<Map<String, dynamic>> registerWorker(Map<String, dynamic> workerData) async {
-    final url = Uri.parse('$baseUrl/register');
+  static Future<Map<String, dynamic>> workerLogin(String phone) async {
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode(workerData),
+      Uri.parse('$baseUrl/api/auth/login'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'phone': phone}),
     );
-
-    return jsonDecode(response.body);
-  }
-
-  // ✅ Fetch Job List API
-  static Future<List<dynamic>> getJobs() async {
-    final url = Uri.parse('$baseUrl/jobs');
-    final response = await http.get(url);
-
     if (response.statusCode == 200) {
-      return jsonDecode(response.body)["jobs"];
+      return jsonDecode(response.body);
     } else {
-      throw Exception("Failed to load jobs");
+      throw Exception('Login failed');
     }
   }
 
-  // ✅ Accept Job API
-  static Future<Map<String, dynamic>> acceptJob(int workerId, int jobId) async {
-    final url = Uri.parse('$baseUrl/accept-job');
-    final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"worker_id": workerId, "job_id": jobId}),
+  static Future<void> updateWorkerProfile(int id, Map<String, dynamic> data) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl/api/workers/$id'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(data),
     );
-
-    return jsonDecode(response.body);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to update profile');
+    }
   }
 
-  // ✅ Complete Job API
-  static Future<Map<String, dynamic>> completeJob(int workerId, int jobId) async {
-    final url = Uri.parse('$baseUrl/complete-job');
+  static Future<void> postJob(Map<String, dynamic> jobData) async {
     final response = await http.post(
-      url,
-      headers: {"Content-Type": "application/json"},
-      body: jsonEncode({"worker_id": workerId, "job_id": jobId}),
+      Uri.parse('$baseUrl/api/jobs'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode(jobData),
     );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to post job');
+    }
+  }
 
-    return jsonDecode(response.body);
+  static Future<List<dynamic>> fetchJobs(String city, String workerType) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/jobs?city=$city&worker_type=$workerType'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch jobs');
+    }
+  }
+
+  static Future<void> acceptJob(int jobId, int workerId) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/api/jobs/$jobId/accept'),
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({'worker_id': workerId}),
+    );
+    if (response.statusCode != 200) {
+      throw Exception('Failed to accept job');
+    }
+  }
+
+  static Future<List<dynamic>> getJobHistory(int workerId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/workers/$workerId/job-history'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body);
+    } else {
+      throw Exception('Failed to fetch job history');
+    }
+  }
+
+  static Future<int> getWalletBalance(int workerId) async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/api/workers/$workerId/wallet'),
+    );
+    if (response.statusCode == 200) {
+      return jsonDecode(response.body)['balance'];
+    } else {
+      throw Exception('Failed to fetch wallet');
+    }
   }
 }

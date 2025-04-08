@@ -5,7 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dashboard_screen.dart';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key});
+  const ProfileScreen({super.key, required worker});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();

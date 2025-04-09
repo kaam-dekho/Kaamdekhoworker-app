@@ -41,10 +41,9 @@ class _LoginScreenState extends State<LoginScreen> {
     generatedOTP = generateOTP();
     visibleOTP = generatedOTP;
 
-    // Call backend login API
     try {
       final response = await http.post(
-        Uri.parse("http://172.16.58.93:5000/api/auth/login"), // Replace with your IP
+        Uri.parse("http://172.16.58.52:5000/api/auth/login"),
         headers: {"Content-Type": "application/json"},
         body: jsonEncode({"phone": phoneNumber}),
       );

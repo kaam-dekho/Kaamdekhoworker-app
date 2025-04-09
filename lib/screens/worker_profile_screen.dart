@@ -26,12 +26,14 @@ class WorkerProfileScreen extends StatelessWidget {
 
               // Dynamic Profile Details
               _buildProfileDetail("Name", worker['name'] ?? "N/A"),
-              _buildProfileDetail("Date of Birth", worker['dob'] ?? "N/A"),
+              _buildProfileDetail("Date of Birth", worker['worker_dob'] ?? "N/A"),
               _buildProfileDetail("Gender", worker['gender'] ?? "N/A"),
               _buildProfileDetail("Phone Number", worker['phone'] ?? "N/A"),
-              _buildProfileDetail("Aadhar Card Number", worker['aadhar'] ?? "N/A"),
-              _buildProfileDetail("Skills", (worker['skills'] as List?)?.join(", ") ?? "N/A"),
+              _buildProfileDetail("Aadhar Card Number", worker['aadhaar_number'] ?? "N/A"),
+              //_buildProfileDetail("Skills", (worker['worker'] as List?)?.join(", ") ?? "N/A"),
               _buildProfileDetail("Experience", worker['experience'] ?? "N/A"),
+              _buildProfileDetail("City", worker['city'] ?? "N/A"),
+              _buildProfileDetail("Skills", worker['worker_type'] ?? "N/A"),
 
               const SizedBox(height: 30),
               Center(

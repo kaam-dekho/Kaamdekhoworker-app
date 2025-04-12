@@ -25,7 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   String? selectedCity;
   File? profilePhoto;
   File? aadharPhoto;
-  String? workerId;
+  //String? workerId;
 
   final List<String> cities = ['Mumbai', 'Delhi', 'Bengaluru', 'Hyderabad', 'Kolkata', 'Chennai', 'Jaipur', 'Hyderabad'];
 
@@ -73,7 +73,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        workerId = data['_id'];
+        //workerId = data['id'];
       } else {
         throw Exception('Failed to fetch worker ID');
       }
@@ -89,7 +89,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         selectedCity == null ||
         skillsController.text.isEmpty ||
         profilePhoto == null ||
-        aadharPhoto == null) {
+        aadharPhoto == null
+    ) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Please fill all fields and upload photos!")),
       );
@@ -97,7 +98,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     await fetchWorkerId();
-    if (workerId == null) {
+    print("*****************************************************************************************************************************");
+    // print(workerId);
+    if (widget.workerId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Unable to retrieve worker ID")),
       );
@@ -119,6 +122,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       request.files.add(await http.MultipartFile.fromPath('aadhaar_photo', aadharPhoto!.path));
 
       var response = await request.send();
+      print("Using worker ID: ${widget.workerId}");
+
 
       if (response.statusCode == 200) {
         ScaffoldMessenger.of(context).showSnackBar(

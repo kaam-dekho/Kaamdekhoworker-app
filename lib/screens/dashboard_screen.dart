@@ -1,7 +1,5 @@
 import 'dart:convert';
-import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
 import 'package:kaamdekhoworker/screens/worker_profile_screen.dart';
 
@@ -10,138 +8,93 @@ class DashboardScreen extends StatefulWidget {
 
   const DashboardScreen({super.key, required this.worker});
 
-
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
 }
 
 class _DashboardScreenState extends State<DashboardScreen> {
-  Position? _currentPosition;
-  List<dynamic> _nearbyJobs = [];
+  List<dynamic> _jobs = [];
+  List<dynamic> _jobHistory = [];
   bool _isLoading = true;
-  bool _errorOccurred = false;
-  int _selectedIndex = 0; // For bottom navigation
+  int _selectedIndex = 0;
+  int _walletBalance = 0;
 
   @override
   void initState() {
     super.initState();
-    _getCurrentLocation();
+    _fetchDashboardData();
   }
 
-  Future<void> _getCurrentLocation() async {
-    try {
-      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-      if (!serviceEnabled) {
-        _showMessage("Please enable location services");
-        setState(() => _isLoading = false);
-        return;
-      }
-
-      LocationPermission permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-        if (permission == LocationPermission.deniedForever) {
-          _showMessage("Location permissions are permanently denied");
-          setState(() => _isLoading = false);
-          return;
-        }
-      }
-
-      Position position = await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
-      setState(() {
-        _currentPosition = position;
-      });
-
-      await _fetchJobs();
-    } catch (e) {
-      _showMessage("Failed to get location");
-      setState(() => _isLoading = false);
-    }
+  Future<void> _fetchDashboardData() async {
+    setState(() => _isLoading = true);
+    await _fetchJobs();
+    await _fetchWallet();
+    setState(() => _isLoading = false);
   }
 
   Future<void> _fetchJobs() async {
-    if (_currentPosition == null) return;
-
-    const String apiUrl = "http://192.168.1.9:5000/api/jobs"; // Replace with actual API
+    const String apiUrl = "http://192.168.1.9:5000/api/jobs";
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
-
       if (response.statusCode == 200) {
         List<dynamic> jobs = jsonDecode(response.body);
 
-        List<dynamic> nearbyJobs = jobs.where((job) {
-          double jobLat = job["latitude"];
-          double jobLng = job["longitude"];
-          return _calculateDistance(
-              _currentPosition!.latitude, _currentPosition!.longitude, jobLat, jobLng) <=
-              5;
-        }).toList();
+        List<dynamic> filteredJobs = jobs.where((job) =>
+        job['city'] == widget.worker['city'] && job['is_active'] == true).toList();
+
+        List<dynamic> historyJobs = jobs.where((job) =>
+        job['accepted_by'] == widget.worker['id'] && job['is_active'] == false).toList();
 
         setState(() {
-          _nearbyJobs = nearbyJobs;
-          _isLoading = false;
-          _errorOccurred = false;
+          _jobs = filteredJobs;
+          _jobHistory = historyJobs;
         });
-      } else {
-        setState(() {
-          _isLoading = false;
-          _errorOccurred = true;
-        });
-        _showMessage("Failed to fetch jobs");
       }
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-        _errorOccurred = true;
-      });
-      _showMessage("Failed to connect to server");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error fetching jobs")),
+      );
     }
   }
 
-  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
-    const double R = 6371;
-    double dLat = _degToRad(lat2 - lat1);
-    double dLon = _degToRad(lon2 - lon1);
-    double a = sin(dLat / 2) * sin(dLat / 2) +
-        cos(_degToRad(lat1)) * cos(_degToRad(lat2)) * sin(dLon / 2) * sin(dLon / 2);
-    double c = 2 * atan2(sqrt(a), sqrt(1 - a));
-    return R * c;
-  }
-
-  double _degToRad(double deg) => deg * (pi / 180);
-
-  void _showMessage(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  Future<void> _fetchWallet() async {
+    final String walletUrl = "http://192.168.1.9:5000/api/workers/wallet/${widget.worker['id']}";
+    try {
+      final response = await http.get(Uri.parse(walletUrl));
+      if (response.statusCode == 200) {
+        setState(() => _walletBalance = jsonDecode(response.body)['wallet_balance']);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Error fetching wallet balance")),
+      );
+    }
   }
 
   void _onBottomNavTapped(int index) {
-    setState(() {
-      _selectedIndex = index;
-    });
+    setState(() => _selectedIndex = index);
   }
 
   void _navigateToProfile() {
-    // Navigator.push(
-    //   context,
-    //   MaterialPageRoute(builder: (context) => const WorkerProfileScreen(worker: workerData)),
-    // );
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (context) => WorkerProfileScreen(worker: widget.worker)),
+    );
   }
 
-
   Widget _buildJobList() {
-    return _nearbyJobs.isEmpty
-        ? const Center(child: Text("No nearby jobs available"))
+    return _jobs.isEmpty
+        ? const Center(child: Text("No active jobs available in your city"))
         : ListView.builder(
-      itemCount: _nearbyJobs.length,
+      itemCount: _jobs.length,
       itemBuilder: (context, index) {
-        var job = _nearbyJobs[index];
+        var job = _jobs[index];
         return Card(
           child: ListTile(
-            title: Text(job["description"]),
-            subtitle: Text(
-                "Distance: ${_calculateDistance(_currentPosition!.latitude, _currentPosition!.longitude, job["latitude"], job["longitude"]).toStringAsFixed(2)} km"),
-            trailing: Text(job["workerTag"]),
+            title: Text(job['title']),
+            subtitle: Text(job['description']),
+            trailing: Text("₹${job['budget']}"),
           ),
         );
       },
@@ -149,11 +102,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Widget _buildJobHistory() {
-    return const Center(child: Text("Job History will be shown here"));
+    return _jobHistory.isEmpty
+        ? const Center(child: Text("No job history"))
+        : ListView.builder(
+      itemCount: _jobHistory.length,
+      itemBuilder: (context, index) {
+        var job = _jobHistory[index];
+        return Card(
+          child: ListTile(
+            title: Text(job['title']),
+            subtitle: Text("Completed | ₹${job['budget']}"),
+          ),
+        );
+      },
+    );
   }
 
   Widget _buildWallet() {
-    return const Center(child: Text("Wallet Balance: ₹0"));
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Text("Wallet Balance: ₹$_walletBalance", style: const TextStyle(fontSize: 18)),
+          const SizedBox(height: 10),
+          if (_walletBalance < 50)
+            Column(
+              children: [
+                const Text("Low Balance! Recharge Now.", style: TextStyle(color: Colors.red)),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Recharge"),
+                ),
+              ],
+            ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -170,8 +154,6 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _errorOccurred
-          ? const Center(child: Text("Error fetching jobs"))
           : _selectedIndex == 0
           ? _buildJobList()
           : _selectedIndex == 1
@@ -187,7 +169,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _fetchJobs,
+        onPressed: _fetchDashboardData,
         child: const Icon(Icons.refresh),
       ),
     );

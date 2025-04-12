@@ -1,188 +1,159 @@
-import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+// Replace these with your actual screen imports
+import 'package:kaamdekhoworker/screens/dashboard_screen.dart';
 import 'package:kaamdekhoworker/screens/profile_screen.dart';
-import 'package:kaamdekhoworker/screens/worker_profile_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key});
+  const LoginScreen({Key? key}) : super(key: key);
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  final TextEditingController phoneController = TextEditingController();
-  final TextEditingController otpController = TextEditingController();
-  String generatedOTP = "";
-  String visibleOTP = "";
-  Map<String, dynamic>? loginResponse;
+  final TextEditingController _phoneController = TextEditingController();
+  final TextEditingController _otpController = TextEditingController();
 
-  // Generate a secure random 6-digit OTP
-  String generateOTP() {
-    Random random = Random();
-    return (100000 + random.nextInt(900000)).toString();
+  String? _generatedOTP;
+  String? _message;
+
+  // Generate random 6-digit OTP
+  void _sendOTP() {
+    final random = Random();
+    setState(() {
+      _generatedOTP = (100000 + random.nextInt(900000)).toString();
+      _message = 'OTP sent (for testing): $_generatedOTP';
+    });
   }
 
-  // Send OTP and make backend call
-  Future<void> sendOTP() async {
-    String phoneNumber = phoneController.text.trim();
-    if (phoneNumber.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter your phone number!")));
-      return;
+  // Verify OTP
+  void _verifyOTP() async {
+    if (_otpController.text.trim() == _generatedOTP) {
+      print("OTP verified correctly");
+      await _verifyWithBackend();
+    } else {
+      setState(() {
+        _message = 'Invalid OTP. Please try again.';
+      });
     }
-    if (!RegExp(r'^[0-9]{10,15}$').hasMatch(phoneNumber)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Enter a valid phone number!")));
-      return;
-    }
+  }
 
-    generatedOTP = generateOTP();
-    visibleOTP = generatedOTP;
-
+  // Verify with backend
+  Future<void> _verifyWithBackend() async {
+    final phone = _phoneController.text.trim();
+    final url = Uri.parse('http://192.168.1.9:5000/api/auth/login');
+    print("Calling backend...");
     try {
       final response = await http.post(
-        Uri.parse("http://172.16.58.52:5000/api/auth/login"),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({"phone": phoneNumber}),
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: json.encode({'phone': phone}),
       );
 
       if (response.statusCode == 200) {
-        setState(() {
-          loginResponse = jsonDecode(response.body);
-        });
-        print("Generated OTP: $generatedOTP");
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("OTP generated! Check console: $generatedOTP")),
-        );
+        final data = json.decode(response.body);
+        final isNew = data['isNew'] ?? false;
+        final workerData = data['worker'] ;
+        print(workerData);
+        final Id = workerData['id'];
+        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
+        print(Id);
+        if (isNew) {
+          print("new User");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => ProfileScreen(phone:  _phoneController.text.trim(),workerId: Id,)) // 👈 worker ID passed here)),
+          );
+        } else {
+          print("existing User");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => DashboardScreen(worker: workerData,)),
+          );
+        }
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Login failed. Try again.")),
-        );
+        setState(() {
+          _message = 'Server error: ${response.statusCode}';
+        });
       }
     } catch (e) {
-      print("Login error: $e");
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Something went wrong. Check connection.")),
-      );
-    }
-  }
-
-  // Verify OTP and Navigate
-  void verifyOTP() {
-    String enteredOTP = otpController.text.trim();
-
-    if (enteredOTP.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please enter the OTP!")),
-      );
-      return;
-    }
-
-    if (enteredOTP == generatedOTP && loginResponse != null) {
-      bool isNew = loginResponse!['newUser'] ?? false;
-      var workerData = loginResponse!['worker'];
-
-      if (isNew) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ProfileScreen(worker: workerData),
-          ),
-        );
-      } else {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (context) => WorkerProfileScreen(worker: workerData),
-          ),
-        );
-      }
-    } else {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Invalid OTP! Please try again.")),
-      );
+      setState(() {
+        _message = 'Something went wrong. Please try again later.';
+      });
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
-        child: SingleChildScrollView(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 100),
-              Image.asset('lib/assets/images/icon.png', height: 120),
-              const SizedBox(height: 10),
-              Text(
-                "KaamDekho Worker",
-                style: GoogleFonts.poppins(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.blueAccent),
-              ),
-              const SizedBox(height: 5),
-              Text(
-                "Login to continue",
-                style: GoogleFonts.poppins(fontSize: 16, color: Colors.black54),
-              ),
-              const SizedBox(height: 40),
-
-              // Phone Number
-              TextField(
-                controller: phoneController,
-                keyboardType: TextInputType.phone,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.phone),
-                  labelText: "Enter Phone Number",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+        child: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              children: [
+                Image.asset(
+                  'lib/assets/images/icon.png',
+                  height: 150,
                 ),
-              ),
-              const SizedBox(height: 15),
-
-              ElevatedButton(
-                onPressed: sendOTP,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blueAccent,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 16),
+                const Text(
+                  'KaamDekho Worker',
+                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                 ),
-                child: Text("Send OTP", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white)),
-              ),
-
-              const SizedBox(height: 20),
-
-              if (visibleOTP.isNotEmpty)
-                Text("Generated OTP (testing): $visibleOTP",
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.red)),
-
-              const SizedBox(height: 20),
-
-              // OTP Field
-              TextField(
-                controller: otpController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  prefixIcon: const Icon(Icons.lock),
-                  labelText: "Enter OTP",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                const SizedBox(height: 8),
+                const Text(
+                  'Login to continue',
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
                 ),
-              ),
-              const SizedBox(height: 15),
+                const SizedBox(height: 32),
 
-              ElevatedButton(
-                onPressed: verifyOTP,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green,
-                  padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 30),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                // Phone number field
+                TextField(
+                  controller: _phoneController,
+                  keyboardType: TextInputType.phone,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter Phone Number',
+                    border: OutlineInputBorder(),
+                  ),
                 ),
-                child: Text("Verify OTP", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white)),
-              ),
-              const SizedBox(height: 50),
-            ],
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _sendOTP,
+                  child: const Text('Send OTP'),
+                ),
+
+                const SizedBox(height: 16),
+
+                // OTP field
+                TextField(
+                  controller: _otpController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Enter OTP',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 8),
+                ElevatedButton(
+                  onPressed: _verifyOTP,
+                  child: const Text('Verify OTP'),
+                ),
+
+                const SizedBox(height: 24),
+
+                if (_message != null)
+                  Text(
+                    _message!,
+                    style: const TextStyle(color: Colors.red),
+                    textAlign: TextAlign.center,
+                  ),
+              ],
+            ),
           ),
         ),
       ),

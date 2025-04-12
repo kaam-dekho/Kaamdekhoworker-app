@@ -2,10 +2,16 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
-import 'dashboard_screen.dart';
+import 'package:http/http.dart' as http;
+import 'package:kaamdekhoworker/screens/dashboard_screen.dart';
+import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
-  const ProfileScreen({super.key, required worker});
+  final String phone;
+  final String workerId;
+
+
+  const ProfileScreen({super.key, required this.phone, required this.workerId});
 
   @override
   _ProfileScreenState createState() => _ProfileScreenState();
@@ -14,13 +20,16 @@ class ProfileScreen extends StatefulWidget {
 class _ProfileScreenState extends State<ProfileScreen> {
   final TextEditingController nameController = TextEditingController();
   final TextEditingController skillsController = TextEditingController();
-  final TextEditingController experienceController = TextEditingController();
   DateTime? selectedDOB;
   String? selectedGender;
+  String? selectedCity;
   File? profilePhoto;
   File? aadharPhoto;
+  String? workerId;
 
-  // Function to pick an image from gallery or camera
+  final List<String> cities = ['Mumbai', 'Delhi', 'Bengaluru', 'Hyderabad', 'Kolkata', 'Chennai', 'Jaipur', 'Hyderabad'];
+
+  // Pick image
   Future<void> pickImage(ImageSource source, bool isProfilePhoto) async {
     final pickedFile = await ImagePicker().pickImage(source: source);
     if (pickedFile != null) {
@@ -34,16 +43,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Function to validate age (must be 18+)
   bool isValidAge(DateTime dob) {
     final now = DateTime.now();
     final age = now.year - dob.year;
     return age > 18 || (age == 18 && (now.month > dob.month || (now.month == dob.month && now.day >= dob.day)));
   }
 
-  // Function to select DOB
   Future<void> selectDOB(BuildContext context) async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: DateTime.now().subtract(const Duration(days: 18 * 365)),
       firstDate: DateTime(1950),
@@ -60,13 +67,27 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
   }
 
-  // Function to submit form
-  void submitForm() {
+  Future<void> fetchWorkerId() async {
+    try {
+      final uri = Uri.parse("http://192.168.1.9:5000/api/workers/profile/${widget.workerId}");
+      final response = await http.get(uri);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        workerId = data['_id'];
+      } else {
+        throw Exception('Failed to fetch worker ID');
+      }
+    } catch (e) {
+      print("Fetch Error: $e");
+    }
+  }
+
+  Future<void> submitForm() async {
     if (nameController.text.isEmpty ||
         selectedDOB == null ||
         selectedGender == null ||
+        selectedCity == null ||
         skillsController.text.isEmpty ||
-        experienceController.text.isEmpty ||
         profilePhoto == null ||
         aadharPhoto == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -75,10 +96,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
       return;
     }
 
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (context) => const DashboardScreen()),
-    );
+    await fetchWorkerId();
+    if (workerId == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Unable to retrieve worker ID")),
+      );
+      return;
+    }
+
+    try {
+      var uri = Uri.parse("http://192.168.1.9:5000/api/workers/profile/${widget.workerId}");
+      var request = http.MultipartRequest('PUT', uri);
+
+      request.fields['name'] = nameController.text;
+      request.fields['worker_dob'] = selectedDOB!.toIso8601String();
+      request.fields['gender'] = selectedGender!;
+      request.fields['worker_type'] = skillsController.text;
+      request.fields['city'] = selectedCity!;
+      request.fields['phone'] = widget.phone;
+
+      request.files.add(await http.MultipartFile.fromPath('profile_photo', profilePhoto!.path));
+      request.files.add(await http.MultipartFile.fromPath('aadhaar_photo', aadharPhoto!.path));
+
+      var response = await request.send();
+
+      if (response.statusCode == 200) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Profile submitted successfully!")),
+        );
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const DashboardScreen(worker: {})),
+        );
+      } else {
+        final resBody = await response.stream.bytesToString();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Failed to submit: ${response.statusCode}\n$resBody")),
+        );
+      }
+    } catch (e) {
+      print("Submit Error: $e");
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("An error occurred. Please try again.")),
+      );
+    }
   }
 
   @override
@@ -89,9 +150,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         padding: const EdgeInsets.all(16.0),
         child: SingleChildScrollView(
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Full Name
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
@@ -100,8 +159,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Date of Birth (with Calendar Picker)
               InkWell(
                 onTap: () => selectDOB(context),
                 child: InputDecorator(
@@ -110,56 +167,46 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                   ),
                   child: Text(
-                    selectedDOB == null ? "Select Date" : "${selectedDOB!.day}/${selectedDOB!.month}/${selectedDOB!.year}",
+                    selectedDOB == null
+                        ? "Select Date"
+                        : "${selectedDOB!.day}/${selectedDOB!.month}/${selectedDOB!.year}",
                     style: GoogleFonts.poppins(fontSize: 16),
                   ),
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Gender Dropdown
               DropdownButtonFormField<String>(
                 value: selectedGender,
-                items: ["Male", "Female", "Other"].map((String gender) {
-                  return DropdownMenuItem<String>(
-                    value: gender,
-                    child: Text(gender, style: GoogleFonts.poppins(fontSize: 16)),
-                  );
+                items: ["Male", "Female", "Other"].map((gender) {
+                  return DropdownMenuItem(value: gender, child: Text(gender));
                 }).toList(),
-                onChanged: (String? value) {
-                  setState(() {
-                    selectedGender = value;
-                  });
-                },
+                onChanged: (val) => setState(() => selectedGender = val),
                 decoration: InputDecoration(
                   labelText: "Gender",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Skills
+              DropdownButtonFormField<String>(
+                value: selectedCity,
+                items: cities.map((city) {
+                  return DropdownMenuItem(value: city, child: Text(city));
+                }).toList(),
+                onChanged: (val) => setState(() => selectedCity = val),
+                decoration: InputDecoration(
+                  labelText: "City",
+                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+              ),
+              const SizedBox(height: 15),
               TextField(
                 controller: skillsController,
                 decoration: InputDecoration(
-                  labelText: "Skills (e.g. Plumber, Electrician)",
+                  labelText: "Worker Type (e.g. Plumber, Electrician)",
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Experience
-              TextField(
-                controller: experienceController,
-                keyboardType: TextInputType.number,
-                decoration: InputDecoration(
-                  labelText: "Experience (in years)",
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              const SizedBox(height: 15),
-
-              // Upload Profile Photo
               GestureDetector(
                 onTap: () => pickImage(ImageSource.gallery, true),
                 child: Container(
@@ -175,8 +222,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
               const SizedBox(height: 15),
-
-              // Upload Aadhar Card Photo
               GestureDetector(
                 onTap: () => pickImage(ImageSource.gallery, false),
                 child: Container(
@@ -187,13 +232,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: aadharPhoto == null
-                      ? const Center(child: Text("Tap to upload Aadhar Card Photo"))
+                      ? const Center(child: Text("Tap to upload Aadhaar Card Photo"))
                       : Image.file(aadharPhoto!, fit: BoxFit.cover),
                 ),
               ),
-              const SizedBox(height: 15),
-
-              // Submit Button
+              const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: submitForm,
                 style: ElevatedButton.styleFrom(
@@ -201,7 +244,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                 ),
-                child: Center(child: Text("Submit", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white))),
+                child: Center(
+                  child: Text("Submit", style: GoogleFonts.poppins(fontSize: 16, color: Colors.white)),
+                ),
               ),
             ],
           ),

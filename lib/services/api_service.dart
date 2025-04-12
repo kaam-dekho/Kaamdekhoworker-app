@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 
-const String baseUrl = 'http://10.0.2.2:5000'; // Localhost for Android emulator
+const String baseUrl = 'http://172.20.10.2:5000'; // Localhost for Android emulator
 
 class ApiService {
   static Future<Map<String, dynamic>> workerLogin(String phone) async {

@@ -3,9 +3,13 @@ import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:http/http.dart' as http;
+import 'package:kaamdekhoworker/screens/worker_profile_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
-  const DashboardScreen({super.key});
+  final Map<String, dynamic> worker;
+
+  const DashboardScreen({super.key, required this.worker});
+
 
   @override
   _DashboardScreenState createState() => _DashboardScreenState();
@@ -58,7 +62,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Future<void> _fetchJobs() async {
     if (_currentPosition == null) return;
 
-    const String apiUrl = "https://yourbackend.com/api/jobs"; // Replace with actual API
+    const String apiUrl = "http://192.168.1.9:5000/api/jobs"; // Replace with actual API
 
     try {
       final response = await http.get(Uri.parse(apiUrl));
@@ -118,8 +122,12 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   void _navigateToProfile() {
-    Navigator.pushNamed(context, "/profile"); // Replace with actual route
+    // Navigator.push(
+    //   context,
+    //   MaterialPageRoute(builder: (context) => const WorkerProfileScreen(worker: workerData)),
+    // );
   }
+
 
   Widget _buildJobList() {
     return _nearbyJobs.isEmpty

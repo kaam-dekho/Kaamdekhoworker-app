@@ -6,6 +6,8 @@ import 'package:http/http.dart' as http;
 import 'package:kaamdekhoworker/screens/dashboard_screen.dart';
 import 'dart:convert';
 
+import 'package:supabase_flutter/supabase_flutter.dart';
+
 class ProfileScreen extends StatefulWidget {
   final String phone;
   final String workerId;
@@ -87,19 +89,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
         selectedDOB == null ||
         selectedGender == null ||
         selectedCity == null ||
-        skillsController.text.isEmpty ||
-        profilePhoto == null ||
-        aadharPhoto == null
-    ) {
+        skillsController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please fill all fields and upload photos!")),
+        const SnackBar(content: Text("Please fill all fields (excluding photos for now)!")),
       );
       return;
     }
 
     await fetchWorkerId();
     print("*****************************************************************************************************************************");
-    // print(workerId);
+
     if (widget.workerId.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Unable to retrieve worker ID")),
@@ -109,34 +108,37 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
     try {
       var uri = Uri.parse("http://192.168.1.9:5000/api/workers/profile/${widget.workerId}");
-      var request = http.MultipartRequest('PUT', uri);
 
-      request.fields['name'] = nameController.text;
-      request.fields['worker_dob'] = selectedDOB!.toIso8601String();
-      request.fields['gender'] = selectedGender!;
-      request.fields['worker_type'] = skillsController.text;
-      request.fields['city'] = selectedCity!;
-      request.fields['phone'] = widget.phone;
+      final body = json.encode({
+        "name": nameController.text,
+        "worker_dob": selectedDOB!.toIso8601String(),
+        "gender": selectedGender!,
+        "worker_type": skillsController.text,
+        "city": selectedCity!,
+        "phone": widget.phone,
+      });
 
-      request.files.add(await http.MultipartFile.fromPath('profile_photo', profilePhoto!.path));
-      request.files.add(await http.MultipartFile.fromPath('aadhaar_photo', aadharPhoto!.path));
+      final response = await http.put(
+        uri,
+        headers: {'Content-Type': 'application/json'},
+        body: body,
+      );
 
-      var response = await request.send();
       print("Using worker ID: ${widget.workerId}");
 
-
       if (response.statusCode == 200) {
+        final workerData = json.decode(response.body);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile submitted successfully!")),
         );
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (context) => const DashboardScreen(worker: {})),
+          MaterialPageRoute(builder: (context) => DashboardScreen(worker:  workerData)),
         );
       } else {
-        final resBody = await response.stream.bytesToString();
+        print("Failed response: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text("Failed to submit: ${response.statusCode}\n$resBody")),
+          SnackBar(content: Text("Failed to submit: ${response.statusCode}\n${response.body}")),
         );
       }
     } catch (e) {

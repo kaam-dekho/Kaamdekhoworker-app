@@ -53,6 +53,8 @@ flutter_icons:
   ios: true
   image_path: "lib/assets/images/icon.png"  # Specify your custom logo image path
 
+dependency_overrides:
+  sign_in_with_apple: null
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

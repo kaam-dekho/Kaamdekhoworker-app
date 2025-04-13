@@ -71,7 +71,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   Future<void> fetchWorkerId() async {
     try {
-      final uri = Uri.parse("http://192.168.1.9:5000/api/workers/profile/${widget.workerId}");
+      final uri = Uri.parse("https://kaamdekho-backend-worker.onrender.com/api/workers/profile/${widget.workerId}");
       final response = await http.get(uri);
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -107,7 +107,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     }
 
     try {
-      var uri = Uri.parse("http://192.168.1.9:5000/api/workers/profile/${widget.workerId}");
+      var uri = Uri.parse("https://kaamdekho-backend-worker.onrender.com/api/workers/profile/${widget.workerId}");
 
       final body = json.encode({
         "name": nameController.text,

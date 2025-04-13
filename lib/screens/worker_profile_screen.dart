@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:font_awesome_flutter/font_awesome_flutter.dart';
 
 class WorkerProfileScreen extends StatelessWidget {
   final Map<String, dynamic> worker;
@@ -8,66 +9,72 @@ class WorkerProfileScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey[100],
       appBar: AppBar(title: const Text("My Profile")),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Profile Picture (placeholder for now)
-              Center(
-                child: CircleAvatar(
-                  radius: 50,
-                  backgroundImage: AssetImage("assets/profile_placeholder.png"),
+        child: Column(
+          children: [
+            Card(
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+              elevation: 4,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 24.0, horizontal: 16),
+                child: Column(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundImage: const AssetImage("assets/profile_placeholder.png"),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      worker['name'] ?? "Unnamed",
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(worker['worker_type'] ?? "Skill not available"),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
+            ),
+            const SizedBox(height: 20),
 
-              // Dynamic Profile Details
-              _buildProfileDetail("Name", worker['name'] ?? "N/A"),
-              _buildProfileDetail("Date of Birth", worker['worker_dob'] ?? "N/A"),
-              _buildProfileDetail("Gender", worker['gender'] ?? "N/A"),
-              _buildProfileDetail("Phone Number", worker['phone'] ?? "N/A"),
-              _buildProfileDetail("Aadhar Card Number", worker['aadhaar_number'] ?? "N/A"),
-              //_buildProfileDetail("Skills", (worker['worker'] as List?)?.join(", ") ?? "N/A"),
-              _buildProfileDetail("Experience", worker['experience'] ?? "N/A"),
-              _buildProfileDetail("City", worker['city'] ?? "N/A"),
-              _buildProfileDetail("Skills", worker['worker_type'] ?? "N/A"),
+            _buildInfoCard(icon: FontAwesomeIcons.calendarAlt, title: "Date of Birth", value: worker['worker_dob']),
+            _buildInfoCard(icon: FontAwesomeIcons.genderless, title: "Gender", value: worker['gender']),
+            _buildInfoCard(icon: FontAwesomeIcons.phone, title: "Phone Number", value: worker['phone']),
+            _buildInfoCard(icon: FontAwesomeIcons.idCard, title: "Aadhar Card", value: worker['aadhaar_number']),
+            _buildInfoCard(icon: FontAwesomeIcons.briefcase, title: "Experience", value: worker['experience']),
+            _buildInfoCard(icon: FontAwesomeIcons.city, title: "City", value: worker['city']),
+            _buildInfoCard(icon: FontAwesomeIcons.toolbox, title: "Skills", value: worker['worker_type']),
 
-              const SizedBox(height: 30),
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Add your edit logic later
-                  },
-                  child: const Text("Edit Profile"),
-                ),
-              )
-            ],
-          ),
+            const SizedBox(height: 30),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blueAccent,
+                padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              onPressed: () {
+                // TODO: Add edit functionality
+              },
+              icon: const Icon(Icons.edit),
+              label: const Text("Edit Profile", style: TextStyle(fontSize: 16)),
+            ),
+          ],
         ),
       ),
     );
   }
 
-  Widget _buildProfileDetail(String title, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6.0),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            "$title: ",
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-          ),
-          Expanded(
-            child: Text(
-              value,
-              style: const TextStyle(fontSize: 16),
-            ),
-          ),
-        ],
+  Widget _buildInfoCard({required IconData icon, required String title, String? value}) {
+    return Card(
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
+      elevation: 2,
+      child: ListTile(
+        leading: Icon(icon, color: Colors.blueAccent),
+        title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text(value ?? "N/A", style: const TextStyle(fontSize: 16)),
       ),
     );
   }

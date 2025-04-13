@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 
-// Replace these with your actual screen imports
 import 'package:kaamdekhoworker/screens/dashboard_screen.dart';
 import 'package:kaamdekhoworker/screens/profile_screen.dart';
 
@@ -21,7 +20,6 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _generatedOTP;
   String? _message;
 
-  // Generate random 6-digit OTP
   void _sendOTP() {
     final random = Random();
     setState(() {
@@ -30,10 +28,8 @@ class _LoginScreenState extends State<LoginScreen> {
     });
   }
 
-  // Verify OTP
   void _verifyOTP() async {
     if (_otpController.text.trim() == _generatedOTP) {
-      print("OTP verified correctly");
       await _verifyWithBackend();
     } else {
       setState(() {
@@ -42,11 +38,9 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  // Verify with backend
   Future<void> _verifyWithBackend() async {
     final phone = _phoneController.text.trim();
-    final url = Uri.parse('http://192.168.1.6:5000/api/auth/login');
-    print("Calling backend...");
+    final url = Uri.parse('https://kaamdekho-backend-worker.onrender.com/api/auth/login');
     try {
       final response = await http.post(
         url,
@@ -57,22 +51,25 @@ class _LoginScreenState extends State<LoginScreen> {
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final isNew = data['isNew'] ?? false;
-        final workerData = data['worker'] ;
-        print(workerData);
+        final workerData = data['worker'];
         final Id = workerData['id'];
-        print("-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------");
-        print(Id);
+
         if (isNew) {
-          print("new User");
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => ProfileScreen(phone:  _phoneController.text.trim(),workerId: Id,)) // 👈 worker ID passed here)),
+            MaterialPageRoute(
+              builder: (context) => ProfileScreen(
+                phone: _phoneController.text.trim(),
+                workerId: Id,
+              ),
+            ),
           );
         } else {
-          print("existing User");
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => DashboardScreen(worker: workerData,)),
+            MaterialPageRoute(
+              builder: (context) => DashboardScreen(worker: workerData),
+            ),
           );
         }
       } else {
@@ -90,69 +87,122 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFF2193b0), Color(0xFF6dd5ed)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
         child: Center(
           child: SingleChildScrollView(
-            child: Column(
-              children: [
-                Image.asset(
-                  'lib/assets/images/icon.png',
-                  height: 150,
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'KaamDekho Worker',
-                  style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Login to continue',
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
-                ),
-                const SizedBox(height: 32),
-
-                // Phone number field
-                TextField(
-                  controller: _phoneController,
-                  keyboardType: TextInputType.phone,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter Phone Number',
-                    border: OutlineInputBorder(),
+            padding: const EdgeInsets.symmetric(horizontal: 24.0),
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.95),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black26,
+                    blurRadius: 10,
+                    offset: Offset(0, 4),
                   ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _sendOTP,
-                  child: const Text('Send OTP'),
-                ),
-
-                const SizedBox(height: 16),
-
-                // OTP field
-                TextField(
-                  controller: _otpController,
-                  keyboardType: TextInputType.number,
-                  decoration: const InputDecoration(
-                    labelText: 'Enter OTP',
-                    border: OutlineInputBorder(),
+                ],
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Image.asset(
+                    'lib/assets/images/icon.png',
+                    height: 100,
                   ),
-                ),
-                const SizedBox(height: 8),
-                ElevatedButton(
-                  onPressed: _verifyOTP,
-                  child: const Text('Verify OTP'),
-                ),
-
-                const SizedBox(height: 24),
-
-                if (_message != null)
-                  Text(
-                    _message!,
-                    style: const TextStyle(color: Colors.red),
-                    textAlign: TextAlign.center,
+                  const SizedBox(height: 16),
+                  const Text(
+                    'KaamDekho Worker',
+                    style: TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: Color(0xFF1e3c72),
+                    ),
                   ),
-              ],
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Login to continue',
+                    style: TextStyle(fontSize: 16, color: Colors.grey),
+                  ),
+                  const SizedBox(height: 28),
+
+                  // Phone input
+                  TextField(
+                    controller: _phoneController,
+                    keyboardType: TextInputType.phone,
+                    decoration: InputDecoration(
+                      labelText: 'Enter Phone Number',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.phone),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _sendOTP,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Color(0xFF1e3c72),
+                      ),
+                      child: const Text('Send OTP'),
+                    ),
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // OTP input
+                  TextField(
+                    controller: _otpController,
+                    keyboardType: TextInputType.number,
+                    decoration: InputDecoration(
+                      labelText: 'Enter OTP',
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      prefixIcon: const Icon(Icons.lock),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      onPressed: _verifyOTP,
+                      style: ElevatedButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        backgroundColor: Color(0xFF1e3c72),
+                      ),
+                      child: const Text('Verify OTP'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  if (_message != null)
+                    Text(
+                      _message!,
+                      style: const TextStyle(
+                        color: Colors.redAccent,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                ],
+              ),
             ),
           ),
         ),

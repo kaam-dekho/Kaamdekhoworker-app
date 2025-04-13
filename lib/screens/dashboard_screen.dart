@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:kaamdekhoworker/screens/worker_profile_screen.dart';
+import 'package:kaamdekhoworker/screens/job_detail_screen.dart';
 
 class DashboardScreen extends StatefulWidget {
   final Map<String, dynamic> worker;
@@ -33,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchJobs() async {
-    const String apiUrl = "http://192.168.1.6:5000/api/jobs";
+    const String apiUrl = "https://kaamdekho-backend-worker.onrender.com/api/jobs";
     try {
       final response = await http.get(Uri.parse(apiUrl));
       if (response.statusCode == 200) {
@@ -55,19 +56,15 @@ class _DashboardScreenState extends State<DashboardScreen> {
   }
 
   Future<void> _fetchWallet() async {
-    final String walletUrl = "http://192.168.1.6:5000/api/workers/wallet/${widget.worker['id']}";
+    final String walletUrl = "https://kaamdekho-backend-worker.onrender.com/api/workers/wallet/${widget.worker['id']}";
     try {
       final response = await http.get(Uri.parse(walletUrl));
-      print("WALLET API RESPONSE: ${response.body}");
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        print("Parsed wallet_balance: ${data['wallet_balance']}");
         setState(() => _walletBalance = data['wallet_balance']);
-      }else {
-        _showMessage("Failed to load wallet: ${response.statusCode}");
+      } else {
+        _showMessage("Failed to load wallet: \${response.statusCode}");
       }
-
     } catch (e) {
       _showMessage("Error fetching wallet balance");
     }
@@ -88,6 +85,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return _jobs.isEmpty
         ? const Center(child: Text("No active jobs available in your city"))
         : ListView.builder(
+      padding: const EdgeInsets.all(12),
       itemCount: _jobs.length,
       itemBuilder: (context, index) {
         var job = _jobs[index];
@@ -96,10 +94,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
         String budget = job['budget']?.toString() ?? '0';
 
         return Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 6,
+          color: Colors.indigo[50],
+          margin: const EdgeInsets.symmetric(vertical: 10),
           child: ListTile(
-            title: Text(title),
-            subtitle: Text(description),
-            trailing: Text("₹$budget"),
+            leading: const CircleAvatar(
+              backgroundColor: Colors.indigo,
+              child: Icon(Icons.work, color: Colors.white),
+            ),
+            title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+            subtitle: Padding(
+              padding: const EdgeInsets.only(top: 6.0),
+              child: Text(description, maxLines: 2, overflow: TextOverflow.ellipsis),
+            ),
+            trailing: Chip(label: Text("₹$budget", style: const TextStyle(color: Colors.white)), backgroundColor: Colors.indigo),
             onTap: () {
               Navigator.push(
                 context,
@@ -123,13 +132,22 @@ class _DashboardScreenState extends State<DashboardScreen> {
     return _jobHistory.isEmpty
         ? const Center(child: Text("No job history"))
         : ListView.builder(
+      padding: const EdgeInsets.all(12),
       itemCount: _jobHistory.length,
       itemBuilder: (context, index) {
         var job = _jobHistory[index];
         return Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          elevation: 5,
+          color: Colors.green[50],
+          margin: const EdgeInsets.symmetric(vertical: 10),
           child: ListTile(
-            title: Text(job['job_title']),
-            subtitle: Text("Completed | ₹${job['budget']}"),
+            leading: const CircleAvatar(
+              backgroundColor: Colors.green,
+              child: Icon(Icons.check, color: Colors.white),
+            ),
+            title: Text(job['job_title'], style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text("Completed | ₹\${job['budget']}", style: const TextStyle(color: Colors.grey)),
           ),
         );
       },
@@ -138,22 +156,35 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   Widget _buildWallet() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text("Wallet Balance: ₹$_walletBalance", style: const TextStyle(fontSize: 18)),
-          const SizedBox(height: 10),
-          if (_walletBalance < 50)
-            Column(
-              children: [
-                const Text("Low Balance! Recharge Now.", style: TextStyle(color: Colors.red)),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: const Text("Recharge"),
+      child: Card(
+        margin: const EdgeInsets.all(16),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+        elevation: 6,
+        color: Colors.orange[50],
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(Icons.account_balance_wallet, size: 50, color: Colors.deepOrange),
+              const SizedBox(height: 12),
+              Text("Wallet Balance: ₹$_walletBalance", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 10),
+              if (_walletBalance < 50)
+                Column(
+                  children: [
+                    const Text("Low Balance! Recharge Now.", style: TextStyle(color: Colors.red)),
+                    const SizedBox(height: 10),
+                    ElevatedButton(
+                      onPressed: () {},
+                      style: ElevatedButton.styleFrom(backgroundColor: Colors.deepOrange),
+                      child: const Text("Recharge"),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-        ],
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -162,7 +193,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Dashboard"),
+        title: const Text("Dashboard", style: TextStyle(fontWeight: FontWeight.bold)),
         actions: [
           IconButton(
             icon: const Icon(Icons.person),
@@ -172,14 +203,18 @@ class _DashboardScreenState extends State<DashboardScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _selectedIndex == 0
-          ? _buildJobList()
-          : _selectedIndex == 1
-          ? _buildJobHistory()
-          : _buildWallet(),
+          : AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _selectedIndex == 0
+            ? _buildJobList()
+            : _selectedIndex == 1
+            ? _buildJobHistory()
+            : _buildWallet(),
+      ),
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: (i) => setState(() => _selectedIndex = i),
+        selectedItemColor: Colors.indigo,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.work), label: "Jobs"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "Job History"),
@@ -187,126 +222,9 @@ class _DashboardScreenState extends State<DashboardScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
+        backgroundColor: Colors.indigo,
         onPressed: _fetchDashboardData,
         child: const Icon(Icons.refresh),
-      ),
-    );
-  }
-}
-
-// 📋 JOB DETAIL SCREEN WITH ACCEPT JOB BUTTON
-class JobDetailScreen extends StatefulWidget {
-  final Map<String, dynamic> job;
-  final Map<String, dynamic> worker;
-  final int walletBalance;
-  final VoidCallback onJobAccepted;
-
-  const JobDetailScreen({
-    super.key,
-    required this.job,
-    required this.worker,
-    required this.walletBalance,
-    required this.onJobAccepted,
-  });
-
-
-  @override
-  State<JobDetailScreen> createState() => _JobDetailScreenState();
-}
-
-class _JobDetailScreenState extends State<JobDetailScreen> {
-  bool _isAccepting = false;
-
-  Future<void> _acceptJob() async {
-    if (widget.walletBalance < 5) {
-      _showMessage("Low balance! Cannot accept job.");
-      return;
-    }
-
-    setState(() => _isAccepting = true);
-
-    final acceptUrl = "http://192.168.1.6:5000/api/jobs/accept";
-    final walletUrl = "http://192.168.1.6:5000/api/workers/wallet/deduct";
-
-    try {
-      final walletResponse = await http.post(
-        Uri.parse(walletUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "worker_id": widget.worker['id'],
-          "amount": 5,
-        }),
-      );
-
-      if (walletResponse.statusCode != 200) {
-        _showMessage("Wallet deduction failed");
-        setState(() => _isAccepting = false);
-        return;
-      }
-
-      final acceptResponse = await http.post(
-        Uri.parse(acceptUrl),
-        headers: {"Content-Type": "application/json"},
-        body: jsonEncode({
-          "job_id": widget.job['id'],
-          "worker_phone": widget.worker['phone'],
-        }),
-      );
-
-      if (acceptResponse.statusCode == 200) {
-        _showMessage("Job Accepted!");
-        widget.onJobAccepted();
-        Navigator.pop(context);
-      } else {
-        _showMessage("Failed to accept job");
-      }
-    } catch (e) {
-      _showMessage("Error occurred while accepting job");
-    }
-
-    setState(() => _isAccepting = false);
-  }
-
-  void _showMessage(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
-  }
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    final job = widget.job;
-    final String title = widget.job['title'] ?? 'No Title';
-    final String description = widget.job['description'] ?? 'No Description';
-    final String budget = widget.job['budget']?.toString() ?? '0';
-
-    return Scaffold(
-      appBar: AppBar(title: const Text("Job Details")),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(title, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 10),
-            Text("Description:", style: const TextStyle(fontWeight: FontWeight.bold)),
-            Text(description),
-            const SizedBox(height: 10),
-            Text("Budget:$budget", style: const TextStyle(fontWeight: FontWeight.bold)),
-            //Text(budget),
-            const SizedBox(height: 10),
-            Text("Type: ${job['worker_type']}"),
-            const SizedBox(height: 10),
-            Text("City: ${job['city']}"),
-            const SizedBox(height: 20),
-            _isAccepting
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-              onPressed: _acceptJob,
-              child: const Text("Accept Job"),
-            ),
-          ],
-        ),
       ),
     );
   }

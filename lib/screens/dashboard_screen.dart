@@ -146,13 +146,17 @@ class _DashboardScreenState extends State<DashboardScreen> {
               backgroundColor: Colors.green,
               child: Icon(Icons.check, color: Colors.white),
             ),
-            title: Text(job['job_title'], style: const TextStyle(fontWeight: FontWeight.bold)),
-            subtitle: Text("Completed | ₹\${job['budget']}", style: const TextStyle(color: Colors.grey)),
+            title: Text(job['title'] ?? 'Job Title', style: const TextStyle(fontWeight: FontWeight.bold)),
+            subtitle: Text(
+              "${job['status'].toString().toUpperCase()} | ₹${job['budget']}",
+              style: const TextStyle(color: Colors.grey),
+            ),
           ),
         );
       },
     );
   }
+
 
   Widget _buildWallet() {
     return Center(

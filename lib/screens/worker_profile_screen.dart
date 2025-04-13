@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:kaamdekhoworker/screens/profile_screen.dart';
 
 class WorkerProfileScreen extends StatelessWidget {
   final Map<String, dynamic> worker;
@@ -24,7 +25,7 @@ class WorkerProfileScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 50,
-                      backgroundImage: const AssetImage("assets/profile_placeholder.png"),
+                      backgroundImage: const AssetImage("lib/assets/profile_placeholder.png"),
                     ),
                     const SizedBox(height: 12),
                     Text(
@@ -55,6 +56,15 @@ class WorkerProfileScreen extends StatelessWidget {
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               ),
               onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => ProfileScreen(
+                      phone: worker['phone'],
+                      workerId: worker['id'].toString(), // in case it's not already a string
+                    ),
+                  ),
+                );
                 // TODO: Add edit functionality
               },
               icon: const Icon(Icons.edit),

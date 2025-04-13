@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
+
 
 class JobDetailScreen extends StatefulWidget {
   final Map<String, dynamic> job;
@@ -78,6 +80,25 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
   }
 
+  void _makePhoneCall(String? phone) async {
+    final Uri url = Uri(scheme: 'tel', path: phone);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      _showMessage('Could not launch dialer');
+    }
+  }
+
+  void _openWhatsApp(String? phone) async {
+    final Uri url = Uri.parse("https://wa.me/$phone");
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      _showMessage('Could not open WhatsApp');
+    }
+  }
+
+
   @override
   Widget build(BuildContext context) {
     final job = widget.job;
@@ -119,6 +140,39 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                 InfoRow(icon: Icons.category, label: "Type", value: job['worker_type'] ?? "N/A"),
                 const SizedBox(height: 10),
                 InfoRow(icon: Icons.location_on, label: "City", value: job['city'] ?? "N/A"),
+                Row(
+                  children: [
+                    const Icon(Icons.phone, color: Colors.deepPurple),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("User Phone:", style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                          const SizedBox(height: 4),
+                          GestureDetector(
+                            onTap: () => _makePhoneCall(job['user_phone'].toString()),
+                            child: Text(
+                              job['user_phone'].toString() ?? "N/A",
+                              style: const TextStyle(color: Colors.blue, decoration: TextDecoration.underline),
+                            ),
+                          ),
+                          const SizedBox(height: 6),
+                          GestureDetector(
+                            onTap: () => _openWhatsApp(job['user_phone'].toString()),
+                            child: const Text(
+                              "Message on WhatsApp",
+                              style: TextStyle(color: Colors.green, fontSize: 15, decoration: TextDecoration.underline),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+
+
+
                 const SizedBox(height: 20),
                 _isAccepting
                     ? const Center(child: CircularProgressIndicator())
@@ -128,13 +182,14 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                     onPressed: _acceptJob,
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.deepPurple,
+                      foregroundColor: Colors.white,
                       padding: const EdgeInsets.symmetric(vertical: 16),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                     icon: const Icon(Icons.check),
-                    label: const Text("Accept Job", style: TextStyle(fontSize: 16)),
+                    label: const Text("Accept Job", style: TextStyle(fontSize: 16),  ),
                   ),
                 ),
               ],

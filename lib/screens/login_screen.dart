@@ -45,7 +45,7 @@ class _LoginScreenState extends State<LoginScreen> {
   // Verify with backend
   Future<void> _verifyWithBackend() async {
     final phone = _phoneController.text.trim();
-    final url = Uri.parse('http://192.168.1.9:5000/api/auth/login');
+    final url = Uri.parse('http://192.168.1.6:5000/api/auth/login');
     print("Calling backend...");
     try {
       final response = await http.post(
